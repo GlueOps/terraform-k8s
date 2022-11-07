@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"reflect"
+	"strings"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -102,6 +103,10 @@ func (r *WorkspaceHelper) initializeReconciliation(request reconcile.Request) (*
 		}
 		// Error reading the object - requeue the request.
 		return nil, err
+	}
+
+	if strings.ToLower(instance.Spec.Organization) == "glueops_placeholder" || strings.ToLower(os.Getenv("TF_ORG")) == "" || strings.ToLower(instance.Spec.Organization) == "this-is-defined-at-the-cluster-level-for-your-organization" {
+		instance.Spec.Organization = os.Getenv("TF_ORG")
 	}
 
 	if instance.Spec.VCS == nil && instance.Spec.Module == nil {
@@ -521,7 +526,7 @@ func (r *WorkspaceHelper) Reconcile(ctx context.Context, request reconcile.Reque
 		return reconcile.Result{}, err
 	}
 
-	if updatedTerraform || updatedVariables || updatedRunTriggers || instance.Status.RunID == "" || instance.Status.ConfigVersionID != "" {
+	if updatedTerraform || updatedVariables || updatedRunTriggers || instance.Status.RunID == "" || instance.Status.ConfigVersionID != "" || instance.Status.RunStatus == "errored" {
 		err := r.startRun(instance)
 		if err != nil {
 			return reconcile.Result{}, err
