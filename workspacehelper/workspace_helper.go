@@ -109,6 +109,10 @@ func (r *WorkspaceHelper) initializeReconciliation(request reconcile.Request) (*
 		r.recorder.Event(instance, corev1.EventTypeWarning, "WorkspaceEvent", msg)
 	}
 
+	if os.Getenv("TF_ORG") != "" {
+		instance.Spec.Organization = os.Getenv("TF_ORG")
+	}
+
 	r.tfclient.Organization = instance.Spec.Organization
 	if err := r.tfclient.CheckOrganization(); err != nil {
 		r.reqLogger.Error(err, "Could not find organization", "Organization", instance.Spec.Organization)
